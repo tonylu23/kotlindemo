@@ -13,7 +13,7 @@ data class ForecastResult(val city: City, val list: List<Forecast>)
 data class City(val id: Long, val name: String, val coord: Coordinates,
                 val country: String, val population: Int)
 data class Coordinates(val lon: Float, val lat: Float)
-data class Forecas(val dt: Long, val temp: Temperature, val pressure: Float,
+data class Forecast(val dt: Long, val temp: Temperature, val pressure: Float,
                     val humidity: Int, val weather: List<Weather>,
                     val speed: Float, val deg: Int, val clouds: Int,
                     val rain: Float)
