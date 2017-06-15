@@ -6,9 +6,11 @@ import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import com.jay.kotlinapplication.adapter.ForecastListAdapter
+import com.jay.kotlinapplication.adapter.OnItemClickListener
 import com.jay.kotlinapplication.tools.Request
 import org.jetbrains.anko.custom.async
 import org.jetbrains.anko.longToast
+import org.jetbrains.anko.toast
 import org.jetbrains.anko.uiThread
 import java.util.*
 
@@ -51,7 +53,13 @@ class WeatherActivity : AppCompatActivity() {
 //            uiThread { longToast("Request performed") }
             val result = RequestForecastCommand("94043").execute()
             uiThread {
-                list.adapter = ForecastListAdapter(result)
+//                list.adapter = ForecastListAdapter(result)
+                list.adapter = ForecastListAdapter(result, object: OnItemClickListener {
+                    override fun invoke(forecast: Forecast) {
+                        toast(forecast.date)
+                    }
+
+                })
             }
         }
     }
