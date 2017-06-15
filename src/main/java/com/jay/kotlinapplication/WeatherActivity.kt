@@ -13,6 +13,7 @@ import org.jetbrains.anko.longToast
 import org.jetbrains.anko.toast
 import org.jetbrains.anko.uiThread
 import java.util.*
+import kotlinx.android.synthetic.activity_weather.*
 
 class WeatherActivity : AppCompatActivity() {
 
@@ -54,12 +55,9 @@ class WeatherActivity : AppCompatActivity() {
             val result = RequestForecastCommand("94043").execute()
             uiThread {
 //                list.adapter = ForecastListAdapter(result)
-                list.adapter = ForecastListAdapter(result, object: OnItemClickListener {
-                    override fun invoke(forecast: Forecast) {
-                        toast(forecast.date)
-                    }
-
-                })
+                list.adapter = ForecastListAdapter(result) {
+                    toast(it.date)
+                }
             }
         }
     }
