@@ -2,6 +2,8 @@ package com.jay.kotlinapplication.sql
 
 import android.database.sqlite.SQLiteDatabase
 import com.jay.kotlinapplication.App
+import com.jay.kotlinapplication.Forecast
+import com.jay.kotlinapplication.ForecastList
 import org.jetbrains.anko.db.*
 
 /**
@@ -9,16 +11,68 @@ import org.jetbrains.anko.db.*
  */
 class SqlClass {
     val forecastDbHelper: ForecastDbHelper = ForecastDbHelper.instance
+    val dataMapper: DbDataMapper = DbDataMapper()
     fun sqlTask() {
-        forecastDbHelper.use {
-
-        }
+        requestForecastByZipCode()
     }
     fun requestForecastByZipCode(zipCode: Long, date: Long) = {
         forecastDbHelper.use {
+            val dailyRequest = "${DayForecastTable.CITY_ID} = ? " +
+                    "AND ${DayForecastTable.DATE} >= ?"
+            val dailyForecast = select(DayForecastTable.NAME)
+                    .whereSimple(dailyRequest, zipCode.toString(), date.toString())
+                    .parseList{DayForecast(HashMap(it))}
+            val city = select(CityForecastTable.NAME)
+                    .whereSimple("${CityForecastTable.ID} = ?", zipCode.toString())
+                    .parseOpt { CityForecast(HashMap(it), dailyForecast) }
+            if (city != null) dataMapper.convertToDomain(city) else null
+
         }
     }
+
+    fun saveForecast(forecast: ForecastList) = forecastDbHelper.use {  }
+
+
+    fun convertFromDomain(forecast: ForecastList) = with(forecast) {
+        val daily = dailyForecast.map { convertFromDomain(id, it) }
+    }
+
+    private fun convertDayFromDomain(cityId: Long, forecast: Forecast
+    ) = with(forecast) {
+                DayForecast(date, description, high, low, iconUrl, cityId)
+            }
+
 }
+
+fun SQLiteDatabase.clear(tableName: String) {
+    execSQL("delete from $tableName")
+}
+
+
+
+class DbDataMapper {
+    fun convertToDomain(forecast: CityForecast) = with(forecast) {
+        val daily = dailyForecast.map { convertDayToDomain(it) }
+        ForecastList(_id, city, country, daily)
+    }
+    private fun convertDayToDomain(dayForecast: DayForecast) = with(
+            dayForecast) {
+        Forecast(date, description, high, low, iconUrl)
+    }
+
+}
+
+
+fun <T: Any> SelectQueryBuilder.parseList(
+        parser: (Map<String, Any>) -> T): List<T> = parseList(object : MapRowParser<T> {
+    override fun parseRow(columns: Map<String, Any?>): T = parser(columns as Map<String, Any>)
+})
+
+fun <T : Any> SelectQueryBuilder.parseOpt(parser: (Map<String, Any>) -> T) : T? =
+        parseOpt(object : MapRowParser<T> {
+            override fun parseRow(columns: Map<String, Any?>): T =
+                parser(columns as Map<String, Any>)
+            })
 
 class ForecastDbHelper() : ManagedSQLiteOpenHelper(App.instance()!!,
         ForecastDbHelper.DB_NAME, null, ForecastDbHelper.DB_VERSION) {
